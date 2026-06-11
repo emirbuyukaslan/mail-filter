@@ -1,0 +1,55 @@
+name: Mail Filter
+
+on:
+  schedule:
+    # Her 30 dakikada bir (UTC). GitHub cron yoğunlukta birkaç dk gecikebilir.
+    - cron: "*/30 * * * *"
+  workflow_dispatch: {}   # Actions sekmesinden elle "Run workflow" butonu
+
+# Aynı anda tek koşu çalışsın (üst üste binmesin)
+concurrency:
+  group: mail-filter
+  cancel-in-progress: false
+
+permissions:
+  contents: write   # processed.json'u repoya geri commit'lemek için
+
+jobs:
+  filter:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run mail filter
+        env:
+          # --- Gizli (GitHub Secrets) ---
+          IMAP_USER: ${{ secrets.IMAP_USER }}
+          IMAP_PASSWORD: ${{ secrets.IMAP_PASSWORD }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          # --- Gizli olmayan ayarlar ---
+          IMAP_HOST: imap.gmail.com
+          IMAP_SEARCH: UNSEEN
+          LOOKBACK_DAYS: "2"
+          GEMINI_MODEL: gemini-3.1-flash-lite
+          IMPORTANCE_THRESHOLD: "3"
+          PYTHONUTF8: "1"
+        run: python mail_filter.py
+
+      - name: Persist state (processed.json)
+        if: always()   # koşu bildirim gönderdiyse hata olsa bile durumu kaydet
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add processed.json
+          git diff --staged --quiet || (git commit -m "Update mail state [skip ci]" && git push)
