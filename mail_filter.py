@@ -85,8 +85,11 @@ def load_state() -> set[str]:
 
 
 def save_state(processed: set[str]) -> None:
-    trimmed = list(processed)[-2000:]  # dosya şişmesin
-    STATE_FILE.write_text(json.dumps(trimmed), encoding="utf-8")
+    # Kararlı (sıralı) yazım: içerik değişmedikçe dosya birebir aynı kalır ->
+    # bulutta gereksiz "state" commit'leri olmaz. sorted ayrıca set'in rastgele
+    # sırasını sabitler. Son 2000 kayıtla sınırla ki dosya şişmesin.
+    trimmed = sorted(processed)[-2000:]
+    STATE_FILE.write_text(json.dumps(trimmed, indent=0), encoding="utf-8")
 
 
 # --------------------------------------------------------------------------- #
