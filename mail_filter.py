@@ -89,7 +89,8 @@ def save_state(processed: set[str]) -> None:
     # bulutta gereksiz "state" commit'leri olmaz. sorted ayrıca set'in rastgele
     # sırasını sabitler. Son 2000 kayıtla sınırla ki dosya şişmesin.
     trimmed = sorted(processed)[-2000:]
-    STATE_FILE.write_text(json.dumps(trimmed, indent=0), encoding="utf-8")
+    # Tek satır kompakt: satır sonu yok -> Windows/Linux (CRLF/LF) farkı oluşmaz.
+    STATE_FILE.write_text(json.dumps(trimmed), encoding="utf-8")
 
 
 # --------------------------------------------------------------------------- #
