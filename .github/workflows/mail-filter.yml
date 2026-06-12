@@ -2,8 +2,9 @@ name: Mail Filter
 
 on:
   schedule:
-    # Her 30 dakikada bir (UTC). GitHub cron yoğunlukta birkaç dk gecikebilir.
-    - cron: "*/30 * * * *"
+    # Her 15 dakikada bir (UTC). Repo public olduğu için Actions dakikaları sınırsız.
+    # Not: GitHub schedule'ı saat başlarında yoğunlukta yine birkaç dk gecikebilir.
+    - cron: "*/15 * * * *"
   workflow_dispatch: {}   # Actions sekmesinden elle "Run workflow" butonu
 
 # Aynı anda tek koşu çalışsın (üst üste binmesin)
