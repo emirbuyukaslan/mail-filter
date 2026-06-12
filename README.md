@@ -1,8 +1,8 @@
 # Mail Süzgeci 📬
 
 Gelen mailleri **Google Gemini (ücretsiz)** ile özetler, **önemli** olanlar için Telegram bildirimi gönderir.
-Gmail'e **IMAP + Uygulama Şifresi** ile bağlanır (Google Cloud gerekmez), Windows Task Scheduler ile periyodik çalışır.
-Tamamen ücretsiz çalışır.
+Gmail'e **IMAP + Uygulama Şifresi** ile bağlanır (Google Cloud gerekmez). **Bulutta (GitHub Actions)
+7/24 otomatik çalışır** — bilgisayar kapalıyken bile. Tamamen ücretsiz.
 
 ## Nasıl çalışır?
 
@@ -50,12 +50,33 @@ Diğer ayarlar (`GEMINI_MODEL`, `IMPORTANCE_THRESHOLD`, `LOOKBACK_DAYS` vb.) giz
 Repo → **Actions** sekmesi → "Mail Filter" → **Run workflow**. Koşu yeşil olmalı, logda
 `Bitti. Yeni mail: ...` satırı görünmeli. Yeni önemli mail varsa Telegram'a düşer.
 
-### 4. Çalışma sıklığı
-Varsayılan **30 dakikada bir** (`.github/workflows/mail-filter.yml` → `cron`).
-- Private repo ücretsiz Actions kotası ayda 2000 dk; 30 dk güvenli.
-- Daha sık (örn. 15 dk) istiyorsan repoyu **public** yap (Actions dakikaları sınırsız olur, kod görünür olur).
+### 4. Düzenli tetikleme (cron-job.org) — önerilen
+GitHub'ın yerleşik `schedule` (cron) tetikleyicisi **güvenilmezdir** — özel repolarda saatlerce
+gecikebilir/atlanabilir. GitHub API ile gönderilen **dispatch** tetiklemeleri ise kısılmaz, zamanında
+çalışır. Bu yüzden düzenli çalışma için ücretsiz bir dış cron kullanılır:
 
-### 5. Yerel görevi kaldır (buluta geçtikten sonra)
+1. **Fine-grained GitHub token** oluştur: https://github.com/settings/personal-access-tokens/new
+   - Repository access → sadece bu repo
+   - Permissions → **Actions: Read and write** (Metadata: Read otomatik)
+2. [cron-job.org](https://cron-job.org) (ücretsiz) → yeni cronjob:
+   - **URL:** `https://api.github.com/repos/<kullanici>/<repo>/actions/workflows/mail-filter.yml/dispatches`
+   - **Method:** `POST`
+   - **Headers:** `Authorization: Bearer <token>` · `Accept: application/vnd.github+json` · `X-GitHub-Api-Version: 2022-11-28`
+   - **Body:** `{"ref":"main"}`
+   - **Schedule:** her 15 dk
+   - Test run → **204** dönerse çalışıyor.
+
+> `.github/workflows/mail-filter.yml` içindeki yerleşik `schedule` (15 dk) **yedek** olarak kalır.
+> Token'ın son kullanma tarihi gelince yenileyip cron-job.org'da güncellemen yeterli.
+
+### 5. Görünürlük ve gizlilik
+- **Public repo:** Actions dakikaları sınırsız + schedule biraz daha düzenli + linki paylaşabilirsin.
+  Ancak Actions **logları herkese açıktır** — bu yüzden kod, mail konusu/özetini loglara **yazmaz**
+  (sadece Telegram'a gider). Yerelde ayrıntılı log istersen `.env`'e `VERBOSE_LOG=true` ekle.
+- **Private repo:** Loglar gizli, ücretsiz Actions kotası ayda 2000 dk (15 dk'da kotayı aşar → 30 dk'ya çek).
+- Her iki durumda da **sırlar Secrets'ta şifrelidir**, logda `***` maskelenir, repoda görünmez.
+
+### 6. Yerel görevi kaldır (buluta geçtikten sonra)
 ```powershell
 Unregister-ScheduledTask -TaskName MailFilter -Confirm:$false
 ```
@@ -111,8 +132,10 @@ Varsayılan **15 dakikada bir**. Farklı aralık: `-IntervalMinutes 5`
 | `IMAP_USER` / `IMAP_PASSWORD` | Gmail adresi + 16 haneli uygulama şifresi | — |
 | `IMAP_SEARCH` | `UNSEEN` (okunmamışlar) veya `ALL` | `UNSEEN` |
 | `LOOKBACK_DAYS` | Kaç gün geriye bakılsın | `2` |
-| `GEMINI_MODEL` | `gemini-2.0-flash` (ücretsiz, hızlı) / `gemini-2.5-flash` | gemini-2.0-flash |
+| `GEMINI_MODEL` | Gemini modeli (örn. `gemini-3.1-flash-lite`, `gemini-2.5-flash`) | gemini-3.1-flash-lite |
 | `IMPORTANCE_THRESHOLD` | Kaç ve üstü skor "önemli" sayılsın (1-5) | `3` |
+| `REQUESTS_PER_MINUTE` | Gemini hız sınırı (ücretsiz katman 15/dk) | `14` |
+| `VERBOSE_LOG` | Mail konusu/özetini de logla (gizlilik için bulutta `false`) | `false` |
 
 ---
 
