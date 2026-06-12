@@ -63,10 +63,10 @@ gecikebilir/atlanabilir. GitHub API ile gönderilen **dispatch** tetiklemeleri i
    - **Method:** `POST`
    - **Headers:** `Authorization: Bearer <token>` · `Accept: application/vnd.github+json` · `X-GitHub-Api-Version: 2022-11-28`
    - **Body:** `{"ref":"main"}`
-   - **Schedule:** her 15 dk
+   - **Schedule:** her 10 dk (istediğin sıklık)
    - Test run → **204** dönerse çalışıyor.
 
-> `.github/workflows/mail-filter.yml` içindeki yerleşik `schedule` (15 dk) **yedek** olarak kalır.
+> `.github/workflows/mail-filter.yml` içindeki yerleşik `schedule` (10 dk) **yedek** olarak kalır.
 > Token'ın son kullanma tarihi gelince yenileyip cron-job.org'da güncellemen yeterli.
 
 ### 5. Görünürlük ve gizlilik

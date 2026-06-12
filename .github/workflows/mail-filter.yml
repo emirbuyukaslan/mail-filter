@@ -2,9 +2,10 @@ name: Mail Filter
 
 on:
   schedule:
-    # Her 15 dakikada bir (UTC). Repo public olduğu için Actions dakikaları sınırsız.
-    # Not: GitHub schedule'ı saat başlarında yoğunlukta yine birkaç dk gecikebilir.
-    - cron: "*/15 * * * *"
+    # YEDEK tetikleyici (her 10 dk, UTC). Asıl düzenli tetikleme cron-job.org'dan
+    # API ile (workflow_dispatch) gelir; GitHub'ın kendi schedule'ı güvenilmez olduğu
+    # için sadece yedektir. Repo public olduğu için Actions dakikaları sınırsız.
+    - cron: "*/10 * * * *"
   workflow_dispatch: {}   # Actions sekmesinden elle "Run workflow" butonu
 
 # Aynı anda tek koşu çalışsın (üst üste binmesin)
