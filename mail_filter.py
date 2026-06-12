@@ -375,6 +375,11 @@ def main():
         )
         return
 
+    # Public repoda Actions logları HERKESE açıktır -> mail içeriğini (konu/özet)
+    # loglara yazma; gizlilik sızmasın. Telegram bildirimi tam özeti almaya devam eder.
+    # Yerelde hata ayıklama için ayrıntılı log istersen: VERBOSE_LOG=true
+    verbose = env("VERBOSE_LOG", "false").lower() == "true"
+
     new_count = notified = 0
     for mail in emails:
         if mail["uid"] in processed:
@@ -383,16 +388,20 @@ def main():
         try:
             analysis = analyze(api_key, model, mail)
         except Exception as e:
-            log.error("Analiz hatası (%s): %s", mail["subject"], e)
+            subj = mail["subject"][:60] if verbose else "(gizli)"
+            log.error("Analiz hatası (%s): %s", subj, e)
             continue
 
         importance = int(analysis.get("importance", 0))
-        log.info(
-            "[%s/5] %s — %s",
-            importance,
-            mail["subject"][:60],
-            analysis.get("summary", "")[:80],
-        )
+        if verbose:
+            log.info(
+                "[%s/5] %s — %s",
+                importance,
+                mail["subject"][:60],
+                analysis.get("summary", "")[:80],
+            )
+        else:
+            log.info("[%s/5] mail analiz edildi", importance)
 
         if importance >= threshold:
             text = format_notification(mail, analysis)
