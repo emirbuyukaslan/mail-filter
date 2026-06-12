@@ -1,0 +1,3 @@
+# processed.json bulut tarafından yazılır; satır-sonu (CRLF/LF) normalizasyonu
+# yerelde sahte "modified" durumu yaratıyordu. -text ile dosyayı olduğu gibi bırak.
+processed.json -text
